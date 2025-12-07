@@ -16,6 +16,8 @@ const saveCsv = ref(false);
 const fileHandle = ref(null);
 const speed = ref(50);
 const separation = ref(0.2);
+const isEditingConstraints = ref(false);
+const blockedCells = ref(new Set()); // Set of "x,y,z" strings
 
 const executionHistory = ref([]);
 
@@ -75,6 +77,49 @@ function initThree() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+
+    // Raycaster setup
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('click', (event) => {
+        if (!isEditingConstraints.value) return;
+
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+
+        // Collect all cell meshes from all panels
+        const allCells = [];
+        panels.forEach(p => {
+            p.cells.forEach(mesh => allCells.push(mesh));
+        });
+
+        const intersects = raycaster.intersectObjects(allCells);
+        if (intersects.length > 0) {
+            const hit = intersects[0];
+            const { gridPos } = hit.object.userData;
+            if (gridPos) {
+                const [x, y, z] = gridPos;
+                const key = `${x},${y},${z}`;
+                
+                if (blockedCells.value.has(key)) {
+                    blockedCells.value.delete(key);
+                    panels.forEach(p => p.setBlocked(x, y, z, false));
+                } else {
+                    // Prevent blocking start position
+                    if (x === startPos.value[0] && y === startPos.value[1] && z === startPos.value[2]) {
+                        alert("Cannot block start position!");
+                        return;
+                    }
+                    blockedCells.value.add(key);
+                    panels.forEach(p => p.setBlocked(x, y, z, true));
+                }
+            }
+        }
+    });
 }
 
 function onWindowResize() {
@@ -107,6 +152,12 @@ function rebuildBoards() {
 
     // Set posisi awal visual
     panels.forEach(p => p.updateKnightPos(...startPos.value));
+
+    // Apply blocked cells
+    blockedCells.value.forEach(key => {
+        const [x, y, z] = key.split(',').map(Number);
+        panels.forEach(p => p.setBlocked(x, y, z, true));
+    });
 
     resetStats();
     resetCamera();
@@ -147,7 +198,7 @@ function toggleSimulation() {
 
         // Panggil solver
         const [w, l, h] = dimensions.value;
-        const sLogic = new KnightTourSolver(w, l, h);
+        const sLogic = new KnightTourSolver(w, l, h, blockedCells.value);
         const start = [...startPos.value];
         solvers = [
             sLogic.solveBacktracking(start),
@@ -240,13 +291,38 @@ watch(dimensions, () => {
             startPos.value[i] = dimensions.value[i] - 1;
         }
     }
+    blockedCells.value.clear(); // Clear constraints on resize
     rebuildBoards();
 }, { deep: true });
 
 function updateDims(v) { dimensions.value = v; }
-function updateStartPos(v) { startPos.value = v; }
+function updateStartPos(v) { 
+    // Check if new start pos is blocked
+    const key = `${v[0]},${v[1]},${v[2]}`;
+    if (blockedCells.value.has(key)) {
+        alert("Cannot set start position on a blocked cell!");
+        // Revert logic would be complex here without v-model, 
+        // but since it's one-way binding from ControlPanel, 
+        // the UI might update but internal state won't if we don't emit back.
+        // For now, just warn and let it be (it will fail on run).
+        // Or better: unblock that cell.
+        blockedCells.value.delete(key);
+        panels.forEach(p => p.setBlocked(v[0], v[1], v[2], false));
+    }
+    startPos.value = v; 
+}
 function updateSpeed(v) { speed.value = v; }
 function updateSeparation(v) { separation.value = v; }
+
+function clearConstraints() {
+    blockedCells.value.clear();
+    panels.forEach(p => {
+        p.cells.forEach((mesh, key) => {
+            const [x,y,z] = mesh.userData.gridPos;
+            p.setBlocked(x, y, z, false);
+        });
+    });
+}
 
 async function selectLogFile() {
     if (!('showOpenFilePicker' in window)) {
@@ -358,6 +434,7 @@ watch(isRunning, (newVal, oldVal) => {
             :isRandomStart="isRandomStart"
             :saveCsv="saveCsv"
             :fileHandle="fileHandle"
+            :isEditingConstraints="isEditingConstraints"
             :speed="speed"
             :separation="separation"
             :stats="stats"
@@ -370,6 +447,8 @@ watch(isRunning, (newVal, oldVal) => {
             @update:separation="updateSeparation"
             @toggle-run="toggleSimulation"
             @reset="rebuildBoards"
+            @toggle-edit-constraints="isEditingConstraints = !isEditingConstraints"
+            @clear-constraints="clearConstraints"
         />
     </div>
 </template>

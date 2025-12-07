@@ -1,7 +1,8 @@
 export class KnightTourSolver {
-    constructor(width, length, height) {
+    constructor(width, length, height, blockedCells = new Set()) {
         this.dims = [width, length, height];
-        this.totalCells = width * length * height;
+        this.blockedCells = blockedCells;
+        this.totalCells = (width * length * height) - blockedCells.size;
     }
 
     isValid(x, y, z, board) {
@@ -44,6 +45,12 @@ export class KnightTourSolver {
             b[i] = new Array(this.dims[1]);
             for(let j=0; j<this.dims[1]; j++){
                 b[i][j] = new Array(this.dims[2]).fill(-1);
+                // Mark blocked cells
+                for(let k=0; k<this.dims[2]; k++) {
+                    if (this.blockedCells.has(`${i},${j},${k}`)) {
+                        b[i][j][k] = -2; // -2 means blocked
+                    }
+                }
             }
         }
         return b;

@@ -10,13 +10,14 @@ const props = defineProps({
     startPos: Array,
     isRandomStart: Boolean,
     saveCsv: Boolean,
-    fileHandle: Object, // Tambahkan prop ini
+    fileHandle: Object,
+    isEditingConstraints: Boolean, // New prop
     speed: Number,
     separation: Number,
     stats: Array
 });
 
-const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'toggle-run', 'reset']);
+const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints']);
 
 const localDims = reactive([...props.dims]);
 const localStartPos = reactive([...props.startPos]);
@@ -139,6 +140,23 @@ const speedStep = computed({
                     <span v-if="fileHandle" class="text-green-400 truncate max-w-[200px]">File: {{ fileHandle.name }}</span>
                     <span v-else>Select Log File...</span>
                 </button>
+            </div>
+
+            <!-- Constraints Section -->
+            <div class="space-y-2 border-t border-gray-700 pt-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Constraints</span>
+                    <button @click="$emit('clear-constraints')" :disabled="isRunning" class="text-[10px] text-red-400 hover:text-red-300 disabled:opacity-50">Clear All</button>
+                </div>
+                <button @click="$emit('toggle-edit-constraints')" 
+                        :disabled="isRunning"
+                        :class="isEditingConstraints ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-gray-800 hover:bg-gray-700 text-gray-300'"
+                        class="w-full py-1.5 rounded text-xs font-bold border border-gray-600 transition-colors disabled:opacity-50">
+                    {{ isEditingConstraints ? 'Done Editing' : 'Edit Blocked Cells' }}
+                </button>
+                <p v-if="isEditingConstraints" class="text-[10px] text-yellow-500 text-center animate-pulse">
+                    Click on cells to block/unblock
+                </p>
             </div>
 
             <div class="grid grid-cols-2 gap-3">

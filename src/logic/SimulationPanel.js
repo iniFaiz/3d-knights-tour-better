@@ -17,6 +17,9 @@ export class SimulationPanel {
         this.activeMat = new THREE.MeshLambertMaterial({ 
             color: this.color, transparent: true, opacity: 0.8 
         });
+        this.blockedMat = new THREE.MeshLambertMaterial({
+            color: 0x1f2937, transparent: true, opacity: 0.9 // Dark gray for blocked
+        });
         
         this.cells = new Map();
         this.knightMesh = null;
@@ -77,6 +80,20 @@ export class SimulationPanel {
     updateKnightPos(x, y, z) {
         const pos = this.getWorldPos(x, y, z);
         this.knightMesh.position.copy(pos);
+    }
+
+    setBlocked(x, y, z, isBlocked) {
+        const key = this.getKey(x, y, z);
+        const mesh = this.cells.get(key);
+        if (mesh) {
+            if (isBlocked) {
+                mesh.material = this.blockedMat;
+                mesh.scale.set(0.9, 0.9, 0.9);
+            } else {
+                mesh.material = this.baseMat.clone();
+                mesh.scale.set(1, 1, 1);
+            }
+        }
     }
 
     updateSeparation(val) {
