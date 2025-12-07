@@ -3,6 +3,7 @@ import { computed } from 'vue';
 
 const props = defineProps({
     title: String,
+    description: String,
     colorClass: String,
     stats: Object,
     totalSteps: Number
@@ -43,8 +44,11 @@ const formattedTime = computed(() => {
 
 <template>
     <div class="bg-gray-800 p-2 rounded border-l-4 transition-all" :class="colors.border">
-        <div class="flex justify-between items-center mb-1">
-            <span class="font-bold text-sm" :class="colors.text">{{ title }}</span>
+        <div class="flex justify-between items-start mb-1">
+            <div class="flex flex-col">
+                <span class="font-bold text-sm" :class="colors.text">{{ title }}</span>
+                <span class="text-[10px] text-gray-500 -mt-0.5">{{ description }}</span>
+            </div>
             <span v-if="stats.done" class="text-[10px] uppercase px-1.5 py-0.5 rounded font-bold" :class="colors.badge">Done</span>
         </div>
         <div class="grid grid-cols-2 gap-x-2 text-xs text-gray-300">

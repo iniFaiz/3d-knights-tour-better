@@ -9,12 +9,14 @@ const props = defineProps({
     dims: Array,
     startPos: Array,
     isRandomStart: Boolean,
+    saveCsv: Boolean,
+    fileHandle: Object, // Tambahkan prop ini
     speed: Number,
     separation: Number,
     stats: Array
 });
 
-const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:speed', 'update:separation', 'toggle-run', 'reset']);
+const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'toggle-run', 'reset']);
 
 const localDims = reactive([...props.dims]);
 const localStartPos = reactive([...props.startPos]);
@@ -122,6 +124,23 @@ const speedStep = computed({
                        min="0" max="2" step="0.1" class="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
             </div>
 
+            <div class="flex flex-col space-y-2 py-1">
+                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:text-gray-300 transition-colors flex items-center gap-2">
+                    <input type="checkbox" 
+                           :checked="saveCsv" 
+                           @change="$emit('update:saveCsv', $event.target.checked)"
+                           class="w-3 h-3 rounded border-gray-600 bg-gray-800 text-green-500 focus:ring-0 focus:ring-offset-0 accent-green-500">
+                    <span>Auto-Append to CSV</span>
+                </label>
+                
+                <button v-if="saveCsv" 
+                        @click="$emit('select-file')"
+                        class="text-xs px-2 py-1 rounded bg-gray-800 border border-gray-600 hover:bg-gray-700 text-gray-300 transition-colors flex items-center justify-center gap-2">
+                    <span v-if="fileHandle" class="text-green-400 truncate max-w-[200px]">File: {{ fileHandle.name }}</span>
+                    <span v-else>Select Log File...</span>
+                </button>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
                 <button @click="$emit('toggle-run')" 
                         :class="isRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
@@ -136,9 +155,9 @@ const speedStep = computed({
 
             <div class="pt-2 space-y-3">
                 <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Live Metrics</h3>
-                <StatsCard title="Backtracking" colorClass="red" :stats="stats[0]" :totalSteps="totalSteps" />
-                <StatsCard title="Warnsdorff" colorClass="cyan" :stats="stats[1]" :totalSteps="totalSteps" />
-                <StatsCard title="Combined" colorClass="green" :stats="stats[2]" :totalSteps="totalSteps" />
+                <StatsCard title="Backtracking" description="Guaranteed (Slow)" colorClass="red" :stats="stats[0]" :totalSteps="totalSteps" />
+                <StatsCard title="Warnsdorff" description="Heuristic (Fast)" colorClass="cyan" :stats="stats[1]" :totalSteps="totalSteps" />
+                <StatsCard title="Combined" description="Hybrid Approach" colorClass="green" :stats="stats[2]" :totalSteps="totalSteps" />
             </div>
         </div>
     </div>

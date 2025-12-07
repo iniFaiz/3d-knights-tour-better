@@ -12,8 +12,12 @@ const isRunning = ref(false);
 const dimensions = ref([4, 4, 4]);
 const startPos = ref([0, 0, 0]);
 const isRandomStart = ref(false);
+const saveCsv = ref(false);
+const fileHandle = ref(null);
 const speed = ref(50);
 const separation = ref(0.2);
+
+const executionHistory = ref([]);
 
 const stats = reactive([
     { done: false, step: 0, ops: 0, time: 0, startTime: 0 },
@@ -35,6 +39,13 @@ const statusText = computed(() => {
 onMounted(() => {
     initThree();
     rebuildBoards();
+    
+    // Load history
+    const saved = localStorage.getItem('knight_tour_history');
+    if (saved) {
+        try { executionHistory.value = JSON.parse(saved); } catch(e) {}
+    }
+
     window.addEventListener('resize', onWindowResize);
     animateLoop();
 });
@@ -236,6 +247,96 @@ function updateDims(v) { dimensions.value = v; }
 function updateStartPos(v) { startPos.value = v; }
 function updateSpeed(v) { speed.value = v; }
 function updateSeparation(v) { separation.value = v; }
+
+async function selectLogFile() {
+    if (!('showOpenFilePicker' in window)) {
+        alert('Browser Anda tidak mendukung File System Access API. Gunakan Chrome, Edge, atau Opera versi terbaru di Desktop.');
+        return;
+    }
+
+    try {
+        // @ts-ignore - File System Access API
+        const [handle] = await window.showOpenFilePicker({
+            types: [{
+                description: 'CSV File',
+                accept: { 'text/csv': ['.csv'] },
+            }],
+            multiple: false
+        });
+        fileHandle.value = handle;
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error('File selection failed', err);
+            alert('Gagal memilih file: ' + err.message);
+        }
+    }
+}
+
+async function appendToCSV() {
+    if (!saveCsv.value || !fileHandle.value) return;
+
+    const headers = ['Timestamp', 'Algorithm', 'Dimensions', 'Start Pos', 'Status', 'Steps', 'Total Steps', 'Time (s)', 'Operations'];
+    const currentRows = [];
+    const timestamp = new Date().toLocaleTimeString();
+    const dimStr = dimensions.value.join('x');
+    const startStr = `[${startPos.value.join('|')}]`;
+    const total = dimensions.value[0] * dimensions.value[1] * dimensions.value[2];
+    const algoNames = ['Backtracking', 'Warnsdorff', 'Combined'];
+
+    stats.forEach((s, idx) => {
+        let status = 'Running';
+        if (s.done) {
+            if (s.step === total) status = 'Success';
+            else status = 'Stuck/Stopped';
+        } else {
+            status = 'Stopped/Interrupted';
+        }
+        
+        currentRows.push([
+            timestamp,
+            algoNames[idx],
+            dimStr,
+            startStr,
+            status,
+            s.step,
+            total,
+            (s.time / 1000).toFixed(3),
+            s.ops
+        ].join(','));
+    });
+
+    const csvContent = currentRows.join('\n') + '\n';
+
+    try {
+        // Create a writable stream to the file
+        const writable = await fileHandle.value.createWritable({ keepExistingData: true });
+        
+        // Check file size to determine if we need headers
+        const file = await fileHandle.value.getFile();
+        const size = file.size;
+        
+        let dataToWrite = csvContent;
+        if (size === 0) {
+            dataToWrite = headers.join(',') + '\n' + csvContent;
+        }
+        
+        await writable.write({ type: 'write', position: size, data: dataToWrite });
+        await writable.close();
+        
+        console.log('Data appended successfully');
+    } catch (err) {
+        console.error('Failed to write to file:', err);
+        alert('Gagal menulis ke file. Pastikan Anda memberikan izin "Edit" saat diminta browser.\nError: ' + err.message);
+        // Jangan reset handle agar user bisa coba lagi tanpa pilih file ulang
+    }
+}
+
+watch(isRunning, (newVal, oldVal) => {
+    if (oldVal === true && newVal === false) {
+        // Simulation finished or stopped
+        appendToCSV();
+    }
+});
 </script>
 
 <template>
@@ -255,12 +356,16 @@ function updateSeparation(v) { separation.value = v; }
             :dims="dimensions"
             :startPos="startPos"
             :isRandomStart="isRandomStart"
+            :saveCsv="saveCsv"
+            :fileHandle="fileHandle"
             :speed="speed"
             :separation="separation"
             :stats="stats"
             @update:dims="updateDims"
             @update:startPos="updateStartPos"
             @update:isRandomStart="isRandomStart = $event"
+            @update:saveCsv="saveCsv = $event"
+            @select-file="selectLogFile"
             @update:speed="updateSpeed"
             @update:separation="updateSeparation"
             @toggle-run="toggleSimulation"
