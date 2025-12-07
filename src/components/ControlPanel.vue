@@ -11,13 +11,14 @@ const props = defineProps({
     isRandomStart: Boolean,
     saveCsv: Boolean,
     fileHandle: Object,
-    isEditingConstraints: Boolean, // New prop
+    isEditingConstraints: Boolean,
+    timeLimit: Number, // New prop
     speed: Number,
     separation: Number,
     stats: Array
 });
 
-const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints']);
+const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'update:timeLimit', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints']);
 
 const localDims = reactive([...props.dims]);
 const localStartPos = reactive([...props.startPos]);
@@ -69,7 +70,7 @@ const speedStep = computed({
 <template>
     <div class="absolute top-4 right-4 w-80 bg-gray-900/95 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700 flex flex-col max-h-[90vh] overflow-hidden z-20">
         
-        <div class="flex-1 overflow-y-auto p-4 space-y-6">
+        <div class="flex-1 p-4 space-y-6 overflow-y-auto">
             <div class="space-y-2">
                 <div class="grid grid-cols-3 gap-2">
                     <div v-for="(axis, idx) in ['x', 'y', 'z']" :key="axis">
@@ -83,13 +84,13 @@ const speedStep = computed({
             <div class="space-y-2">
                 <div class="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                     <span>Start Position</span>
-                    <label class="flex items-center space-x-2 cursor-pointer hover:text-gray-300 transition-colors">
+                    <label class="flex items-center space-x-2 transition-colors cursor-pointer hover:text-gray-300">
                         <span class="text-[10px]">Random</span>
                         <input type="checkbox" 
                                :checked="isRandomStart" 
                                @change="$emit('update:isRandomStart', $event.target.checked)"
                                :disabled="isRunning"
-                               class="w-3 h-3 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-0 focus:ring-offset-0 accent-blue-500">
+                               class="w-3 h-3 text-blue-500 bg-gray-800 border-gray-600 rounded focus:ring-0 focus:ring-offset-0 accent-blue-500">
                     </label>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
@@ -125,26 +126,26 @@ const speedStep = computed({
                        min="0" max="2" step="0.1" class="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
             </div>
 
-            <div class="flex flex-col space-y-2 py-1">
+            <div class="flex flex-col py-1 space-y-2">
                 <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:text-gray-300 transition-colors flex items-center gap-2">
                     <input type="checkbox" 
                            :checked="saveCsv" 
                            @change="$emit('update:saveCsv', $event.target.checked)"
-                           class="w-3 h-3 rounded border-gray-600 bg-gray-800 text-green-500 focus:ring-0 focus:ring-offset-0 accent-green-500">
+                           class="w-3 h-3 text-green-500 bg-gray-800 border-gray-600 rounded focus:ring-0 focus:ring-offset-0 accent-green-500">
                     <span>Auto-Append to CSV</span>
                 </label>
                 
                 <button v-if="saveCsv" 
                         @click="$emit('select-file')"
-                        class="text-xs px-2 py-1 rounded bg-gray-800 border border-gray-600 hover:bg-gray-700 text-gray-300 transition-colors flex items-center justify-center gap-2">
+                        class="flex items-center justify-center gap-2 px-2 py-1 text-xs text-gray-300 transition-colors bg-gray-800 border border-gray-600 rounded hover:bg-gray-700">
                     <span v-if="fileHandle" class="text-green-400 truncate max-w-[200px]">File: {{ fileHandle.name }}</span>
                     <span v-else>Select Log File...</span>
                 </button>
             </div>
 
             <!-- Constraints Section -->
-            <div class="space-y-2 border-t border-gray-700 pt-2">
-                <div class="flex justify-between items-center">
+            <div class="pt-2 space-y-2 border-t border-gray-700">
+                <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Constraints</span>
                     <button @click="$emit('clear-constraints')" :disabled="isRunning" class="text-[10px] text-red-400 hover:text-red-300 disabled:opacity-50">Clear All</button>
                 </div>
@@ -157,6 +158,16 @@ const speedStep = computed({
                 <p v-if="isEditingConstraints" class="text-[10px] text-yellow-500 text-center animate-pulse">
                     Click on cells to block/unblock
                 </p>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                    <span>Time Limit (sec)</span>
+                    <span class="text-orange-400">{{ timeLimit > 0 ? timeLimit + 's' : 'No Limit' }}</span>
+                </div>
+                <input type="number" :value="timeLimit" @input="$emit('update:timeLimit', +$event.target.value)" 
+                       min="0" step="0.1" placeholder="0 = No Limit"
+                       class="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-center text-sm text-white focus:border-orange-500 focus:outline-none transition-colors">
             </div>
 
             <div class="grid grid-cols-2 gap-3">

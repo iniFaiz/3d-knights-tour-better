@@ -16,6 +16,7 @@ const saveCsv = ref(false);
 const fileHandle = ref(null);
 const speed = ref(50);
 const separation = ref(0.2);
+const timeLimit = ref(0); // 0 means no limit
 const isEditingConstraints = ref(false);
 const blockedCells = ref(new Set()); // Set of "x,y,z" strings
 
@@ -220,6 +221,26 @@ function toggleSimulation() {
 function logicLoop() {
     if (!isRunning.value) return;
 
+    // Check Time Limit
+    if (timeLimit.value > 0) {
+        const now = performance.now();
+        // Check if any running solver has exceeded time limit
+        let anyExceeded = false;
+        stats.forEach(s => {
+            if (!s.done && (now - s.startTime) > (timeLimit.value * 1000)) {
+                s.done = true;
+                s.time = now - s.startTime;
+                anyExceeded = true;
+            }
+        });
+        
+        // If all are done (either finished or timed out), stop simulation
+        if (stats.every(s => s.done)) {
+            isRunning.value = false;
+            return;
+        }
+    }
+
     // kontrol speed
     let stepsPerFrame = 1;
     let delayMs = 0;
@@ -313,6 +334,7 @@ function updateStartPos(v) {
 }
 function updateSpeed(v) { speed.value = v; }
 function updateSeparation(v) { separation.value = v; }
+function updateTimeLimit(v) { timeLimit.value = v; }
 
 function clearConstraints() {
     blockedCells.value.clear();
@@ -437,6 +459,7 @@ watch(isRunning, (newVal, oldVal) => {
             :isEditingConstraints="isEditingConstraints"
             :speed="speed"
             :separation="separation"
+            :timeLimit="timeLimit"
             :stats="stats"
             @update:dims="updateDims"
             @update:startPos="updateStartPos"
@@ -445,6 +468,7 @@ watch(isRunning, (newVal, oldVal) => {
             @select-file="selectLogFile"
             @update:speed="updateSpeed"
             @update:separation="updateSeparation"
+            @update:timeLimit="updateTimeLimit"
             @toggle-run="toggleSimulation"
             @reset="rebuildBoards"
             @toggle-edit-constraints="isEditingConstraints = !isEditingConstraints"
