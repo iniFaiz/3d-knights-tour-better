@@ -11,6 +11,7 @@ const canvasRef = ref(null);
 const isRunning = ref(false);
 const dimensions = ref([4, 4, 4]);
 const startPos = ref([0, 0, 0]);
+const isRandomStart = ref(false);
 const speed = ref(50);
 const separation = ref(0.2);
 
@@ -123,6 +124,16 @@ function toggleSimulation() {
     } else {
         if (allFinished.value) rebuildBoards();
         
+        // Handle Random Start
+        if (isRandomStart.value) {
+            const [w, l, h] = dimensions.value;
+            startPos.value = [
+                Math.floor(Math.random() * w),
+                Math.floor(Math.random() * l),
+                Math.floor(Math.random() * h)
+            ];
+        }
+
         // Panggil solver
         const [w, l, h] = dimensions.value;
         const sLogic = new KnightTourSolver(w, l, h);
@@ -243,11 +254,13 @@ function updateSeparation(v) { separation.value = v; }
             :statusText="statusText"
             :dims="dimensions"
             :startPos="startPos"
+            :isRandomStart="isRandomStart"
             :speed="speed"
             :separation="separation"
             :stats="stats"
             @update:dims="updateDims"
             @update:startPos="updateStartPos"
+            @update:isRandomStart="isRandomStart = $event"
             @update:speed="updateSpeed"
             @update:separation="updateSeparation"
             @toggle-run="toggleSimulation"

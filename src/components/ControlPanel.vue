@@ -8,12 +8,13 @@ const props = defineProps({
     statusText: String,
     dims: Array,
     startPos: Array,
+    isRandomStart: Boolean,
     speed: Number,
     separation: Number,
     stats: Array
 });
 
-const emit = defineEmits(['update:dims', 'update:startPos', 'update:speed', 'update:separation', 'toggle-run', 'reset']);
+const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:speed', 'update:separation', 'toggle-run', 'reset']);
 
 const localDims = reactive([...props.dims]);
 const localStartPos = reactive([...props.startPos]);
@@ -77,13 +78,23 @@ const speedStep = computed({
             </div>
 
             <div class="space-y-2">
-                <div class="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                <div class="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                     <span>Start Position</span>
+                    <label class="flex items-center space-x-2 cursor-pointer hover:text-gray-300 transition-colors">
+                        <span class="text-[10px]">Random</span>
+                        <input type="checkbox" 
+                               :checked="isRandomStart" 
+                               @change="$emit('update:isRandomStart', $event.target.checked)"
+                               :disabled="isRunning"
+                               class="w-3 h-3 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-0 focus:ring-offset-0 accent-blue-500">
+                    </label>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
                     <div v-for="(axis, idx) in ['x', 'y', 'z']" :key="'start-'+axis">
                         <label class="block text-center text-[10px] text-gray-500 mb-1">{{ axis.toUpperCase() }}</label>
-                        <input type="number" v-model.number="localStartPos[idx]" @change="updateStartPos" :disabled="isRunning" min="0" :max="localDims[idx]-1"
+                        <input type="number" v-model.number="localStartPos[idx]" @change="updateStartPos" 
+                            :disabled="isRunning || isRandomStart" 
+                            min="0" :max="localDims[idx]-1"
                             class="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-center text-sm text-white focus:border-blue-500 focus:outline-none disabled:opacity-50 transition-colors">
                     </div>
                 </div>
