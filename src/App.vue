@@ -372,6 +372,12 @@ async function selectLogFile() {
             multiple: false
         });
         fileHandle.value = handle;
+
+        // Request write permission immediately while we have user activation
+        const opts = { mode: 'readwrite' };
+        if ((await handle.queryPermission(opts)) !== 'granted') {
+            await handle.requestPermission(opts);
+        }
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error('File selection failed', err);
