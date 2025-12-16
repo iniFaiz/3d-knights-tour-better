@@ -23,9 +23,9 @@ const blockedCells = ref(new Set()); // Set of "x,y,z" strings
 const executionHistory = ref([]);
 
 const stats = reactive([
-    { done: false, step: 0, ops: 0, time: 0, startTime: 0 },
-    { done: false, step: 0, ops: 0, time: 0, startTime: 0 },
-    { done: false, step: 0, ops: 0, time: 0, startTime: 0 } 
+    { done: false, step: 0, ops: 0, time: 0, startTime: 0, status: null },
+    { done: false, step: 0, ops: 0, time: 0, startTime: 0, status: null },
+    { done: false, step: 0, ops: 0, time: 0, startTime: 0, status: null } 
 ]);
 
 let scene, camera, renderer, controls, animationId;
@@ -173,7 +173,7 @@ function resetCamera() {
 }
 
 function resetStats() {
-    stats.forEach(s => { s.done = false; s.step = 0; s.ops = 0; s.time = 0; s.startTime = 0; });
+    stats.forEach(s => { s.done = false; s.step = 0; s.ops = 0; s.time = 0; s.startTime = 0; s.status = null; });
 }
 
 function stopSimulation() {
@@ -230,6 +230,7 @@ function logicLoop() {
             if (!s.done && (now - s.startTime) > (timeLimit.value * 1000)) {
                 s.done = true;
                 s.time = now - s.startTime;
+                s.status = 'Timeout';
                 anyExceeded = true;
             }
         });
@@ -268,6 +269,10 @@ function logicLoop() {
                 if (res.done) {
                     stats[idx].done = true;
                     stats[idx].time = performance.now() - stats[idx].startTime;
+                    
+                    const total = dimensions.value[0] * dimensions.value[1] * dimensions.value[2];
+                    if (stats[idx].step === total) stats[idx].status = 'Success';
+                    else stats[idx].status = 'Stuck';
                 } else {
                     const { type, pos, step } = res.value;
                     panels[idx].update(type, pos, step);
@@ -280,9 +285,14 @@ function logicLoop() {
                     if (stats[idx].step === total) {
                         stats[idx].done = true;
                         stats[idx].time = performance.now() - stats[idx].startTime;
+                        stats[idx].status = 'Success';
                     }
                 }
-            } catch(e) { console.error(e); stats[idx].done = true; }
+            } catch(e) { 
+                console.error(e); 
+                stats[idx].done = true; 
+                stats[idx].status = 'Error';
+            }
         });
         if (active === 0) isRunning.value = false;
     };
@@ -382,12 +392,15 @@ async function appendToCSV() {
     const algoNames = ['Backtracking', 'Warnsdorff', 'Combined'];
 
     stats.forEach((s, idx) => {
-        let status = 'Running';
-        if (s.done) {
-            if (s.step === total) status = 'Success';
-            else status = 'Stuck/Stopped';
-        } else {
-            status = 'Stopped/Interrupted';
+        let status = s.status;
+        
+        if (!status) {
+            if (s.done) {
+                if (s.step === total) status = 'Success';
+                else status = 'Stuck';
+            } else {
+                status = 'Stopped';
+            }
         }
         
         currentRows.push([
