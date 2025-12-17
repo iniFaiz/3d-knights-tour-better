@@ -12,6 +12,7 @@ const isRunning = ref(false);
 const dimensions = ref([4, 4, 4]);
 const startPos = ref([0, 0, 0]);
 const isRandomStart = ref(false);
+const isRandomConstraints = ref(false);
 const saveCsv = ref(false);
 const fileHandle = ref(null);
 const speed = ref(50);
@@ -195,6 +196,11 @@ function toggleSimulation() {
                 Math.floor(Math.random() * l),
                 Math.floor(Math.random() * h)
             ];
+        }
+
+        // Handle Random Constraints
+        if (isRandomConstraints.value) {
+            randomizeConstraints();
         }
 
         // Panggil solver
@@ -499,6 +505,7 @@ watch(isRunning, (newVal, oldVal) => {
 
         <ControlPanel 
             :isRunning="isRunning"
+            :isRandomConstraints="isRandomConstraints"
             :allFinished="allFinished"
             :statusText="statusText"
             :dims="dimensions"
@@ -513,6 +520,7 @@ watch(isRunning, (newVal, oldVal) => {
             :stats="stats"
             @update:dims="updateDims"
             @update:startPos="updateStartPos"
+            @update:isRandomConstraints="isRandomConstraints = $event"
             @update:isRandomStart="isRandomStart = $event"
             @update:saveCsv="saveCsv = $event"
             @select-file="selectLogFile"

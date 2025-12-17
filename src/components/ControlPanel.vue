@@ -9,6 +9,7 @@ const props = defineProps({
     dims: Array,
     startPos: Array,
     isRandomStart: Boolean,
+    isRandomConstraints: Boolean,
     saveCsv: Boolean,
     fileHandle: Object,
     isEditingConstraints: Boolean,
@@ -18,7 +19,7 @@ const props = defineProps({
     stats: Array
 });
 
-const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'update:timeLimit', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints', 'randomize-constraints']);
+const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:isRandomConstraints', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'update:timeLimit', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints', 'randomize-constraints']);
 
 const localDims = reactive([...props.dims]);
 const localStartPos = reactive([...props.startPos]);
@@ -147,8 +148,15 @@ const speedStep = computed({
             <div class="pt-2 space-y-2 border-t border-gray-700">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Constraints</span>
-                    <div class="flex gap-2">
-                        <button @click="$emit('randomize-constraints')" :disabled="isRunning" class="text-[10px] text-blue-400 hover:text-blue-300 disabled:opacity-50">Random</button>
+                    <div class="flex items-center gap-2">
+                        <label class="flex items-center space-x-2 transition-colors cursor-pointer text-gray-500 hover:text-gray-300">
+                            <span class="text-[10px]">Random</span>
+                            <input type="checkbox" 
+                                   :checked="isRandomConstraints" 
+                                   @change="$emit('update:isRandomConstraints', $event.target.checked)"
+                                   :disabled="isRunning"
+                                   class="w-3 h-3 text-blue-500 bg-gray-800 border-gray-600 rounded focus:ring-0 focus:ring-offset-0 accent-blue-500">
+                        </label>
                         <button @click="$emit('clear-constraints')" :disabled="isRunning" class="text-[10px] text-red-400 hover:text-red-300 disabled:opacity-50">Clear All</button>
                     </div>
                 </div>
