@@ -17,8 +17,8 @@ export class SimulationPanel {
         this.activeMat = new THREE.MeshLambertMaterial({ 
             color: this.color, transparent: true, opacity: 0.8 
         });
-        this.blockedMat = new THREE.MeshLambertMaterial({
-            color: 0x1f2937, transparent: true, opacity: 0.9 // Dark gray for blocked
+        this.blockedMat = new THREE.MeshBasicMaterial({
+            color: 0x000000 // Pure black, not affected by light
         });
         
         this.cells = new Map();
@@ -86,6 +86,7 @@ export class SimulationPanel {
         const key = this.getKey(x, y, z);
         const mesh = this.cells.get(key);
         if (mesh) {
+            mesh.userData.isBlocked = isBlocked;
             if (isBlocked) {
                 mesh.material = this.blockedMat;
                 mesh.scale.set(0.9, 0.9, 0.9);
@@ -145,8 +146,13 @@ export class SimulationPanel {
 
     reset(startPos = [0, 0, 0]) {
         this.cells.forEach(mesh => {
-            mesh.material = this.baseMat.clone();
-            mesh.scale.set(1, 1, 1);
+            if (mesh.userData.isBlocked) {
+                mesh.material = this.blockedMat;
+                mesh.scale.set(0.9, 0.9, 0.9);
+            } else {
+                mesh.material = this.baseMat.clone();
+                mesh.scale.set(1, 1, 1);
+            }
         });
         this.trailPoints = [];
         this.pathHistory = [];

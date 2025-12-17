@@ -276,7 +276,7 @@ function logicLoop() {
                     stats[idx].done = true;
                     stats[idx].time = performance.now() - stats[idx].startTime;
                     
-                    const total = dimensions.value[0] * dimensions.value[1] * dimensions.value[2];
+                    const total = (dimensions.value[0] * dimensions.value[1] * dimensions.value[2]) - blockedCells.value.size;
                     if (stats[idx].step === total) stats[idx].status = 'Success';
                     else stats[idx].status = 'Stuck';
                 } else {
@@ -287,7 +287,7 @@ function logicLoop() {
                     if (type === 'revert') stats[idx].step = step - 1;
                     
                     // Check complete
-                    const total = dimensions.value[0] * dimensions.value[1] * dimensions.value[2];
+                    const total = (dimensions.value[0] * dimensions.value[1] * dimensions.value[2]) - blockedCells.value.size;
                     if (stats[idx].step === total) {
                         stats[idx].done = true;
                         stats[idx].time = performance.now() - stats[idx].startTime;
@@ -431,7 +431,7 @@ async function appendToCSV() {
     const timestamp = new Date().toLocaleTimeString();
     const dimStr = dimensions.value.join('x');
     const startStr = `[${startPos.value.join('|')}]`;
-    const total = dimensions.value[0] * dimensions.value[1] * dimensions.value[2];
+    const total = (dimensions.value[0] * dimensions.value[1] * dimensions.value[2]) - blockedCells.value.size;
     const algoNames = ['Backtracking', 'Warnsdorff', 'Combined'];
 
     stats.forEach((s, idx) => {
