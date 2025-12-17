@@ -24,9 +24,9 @@ const blockedCells = ref(new Set()); // Set of "x,y,z" strings
 const executionHistory = ref([]);
 
 const stats = reactive([
-    { done: false, step: 0, ops: 0, time: 0, startTime: 0, status: null },
-    { done: false, step: 0, ops: 0, time: 0, startTime: 0, status: null },
-    { done: false, step: 0, ops: 0, time: 0, startTime: 0, status: null } 
+    { done: false, step: 0, maxStep: 0, ops: 0, time: 0, startTime: 0, status: null },
+    { done: false, step: 0, maxStep: 0, ops: 0, time: 0, startTime: 0, status: null },
+    { done: false, step: 0, maxStep: 0, ops: 0, time: 0, startTime: 0, status: null } 
 ]);
 
 let scene, camera, renderer, controls, animationId;
@@ -174,7 +174,7 @@ function resetCamera() {
 }
 
 function resetStats() {
-    stats.forEach(s => { s.done = false; s.step = 0; s.ops = 0; s.time = 0; s.startTime = 0; s.status = null; });
+    stats.forEach(s => { s.done = false; s.step = 0; s.maxStep = 0; s.ops = 0; s.time = 0; s.startTime = 0; s.status = null; });
 }
 
 function stopSimulation() {
@@ -283,7 +283,10 @@ function logicLoop() {
                     const { type, pos, step } = res.value;
                     panels[idx].update(type, pos, step);
                     
-                    if (type === 'move') stats[idx].step = step + 1;
+                    if (type === 'move') {
+                        stats[idx].step = step + 1;
+                        if (stats[idx].step > stats[idx].maxStep) stats[idx].maxStep = stats[idx].step;
+                    }
                     if (type === 'revert') stats[idx].step = step - 1;
                     
                     // Check complete
@@ -426,7 +429,7 @@ async function selectLogFile() {
 async function appendToCSV() {
     if (!saveCsv.value || !fileHandle.value) return;
 
-    const headers = ['Timestamp', 'Algorithm', 'Dimensions', 'Start Pos', 'Status', 'Steps', 'Total Steps', 'Time (s)', 'Operations'];
+    const headers = ['Timestamp', 'Algorithm', 'Dimensions', 'Start Pos', 'Status', 'Deepest Step', 'Total Steps', 'Time (s)', 'Operations'];
     const currentRows = [];
     const timestamp = new Date().toLocaleTimeString();
     const dimStr = dimensions.value.join('x');
@@ -452,7 +455,7 @@ async function appendToCSV() {
             dimStr,
             startStr,
             status,
-            s.step,
+            s.maxStep,
             total,
             (s.time / 1000).toFixed(3),
             s.ops

@@ -52,6 +52,8 @@ const formattedTime = computed(() => {
             <span v-if="stats.done" class="text-[10px] uppercase px-1.5 py-0.5 rounded font-bold" :class="colors.badge">Done</span>
         </div>
         <div class="grid grid-cols-2 gap-x-2 text-xs text-gray-300">
+            <div class="flex justify-between"><span>Steps:</span> <span class="text-white font-mono">{{ stats.step }}/{{ totalSteps }}</span></div>
+            <div class="flex justify-between"><span>Deepest:</span> <span class="text-white font-mono">{{ stats.maxStep || 0 }}</span></div>
             <div class="flex justify-between"><span>Time:</span> <span class="text-white font-mono">{{ formattedTime }}</span></div>
             <div class="flex justify-between"><span>Ops:</span> <span class="text-white font-mono">{{ stats.ops }}</span></div>
             <div class="col-span-2 mt-2 bg-gray-700 h-1.5 rounded-full overflow-hidden">
