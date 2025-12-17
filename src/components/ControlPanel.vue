@@ -18,7 +18,7 @@ const props = defineProps({
     stats: Array
 });
 
-const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'update:timeLimit', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints']);
+const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'update:timeLimit', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints', 'randomize-constraints']);
 
 const localDims = reactive([...props.dims]);
 const localStartPos = reactive([...props.startPos]);
@@ -147,7 +147,10 @@ const speedStep = computed({
             <div class="pt-2 space-y-2 border-t border-gray-700">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Constraints</span>
-                    <button @click="$emit('clear-constraints')" :disabled="isRunning" class="text-[10px] text-red-400 hover:text-red-300 disabled:opacity-50">Clear All</button>
+                    <div class="flex gap-2">
+                        <button @click="$emit('randomize-constraints')" :disabled="isRunning" class="text-[10px] text-blue-400 hover:text-blue-300 disabled:opacity-50">Random</button>
+                        <button @click="$emit('clear-constraints')" :disabled="isRunning" class="text-[10px] text-red-400 hover:text-red-300 disabled:opacity-50">Clear All</button>
+                    </div>
                 </div>
                 <button @click="$emit('toggle-edit-constraints')" 
                         :disabled="isRunning"

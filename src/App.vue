@@ -356,6 +356,37 @@ function clearConstraints() {
     });
 }
 
+function randomizeConstraints() {
+    clearConstraints();
+    const [w, l, h] = dimensions.value;
+    const total = w * l * h;
+    // Block roughly 10% of cells
+    const count = Math.floor(total * 0.1); 
+
+    let added = 0;
+    let attempts = 0;
+    // Safety break to prevent infinite loop if board is small or full
+    while (added < count && attempts < total * 5) {
+        const x = Math.floor(Math.random() * w);
+        const y = Math.floor(Math.random() * l);
+        const z = Math.floor(Math.random() * h);
+        const key = `${x},${y},${z}`;
+
+        // Don't block start pos
+        if (x === startPos.value[0] && y === startPos.value[1] && z === startPos.value[2]) {
+            attempts++;
+            continue;
+        }
+
+        if (!blockedCells.value.has(key)) {
+            blockedCells.value.add(key);
+            panels.forEach(p => p.setBlocked(x, y, z, true));
+            added++;
+        }
+        attempts++;
+    }
+}
+
 async function selectLogFile() {
     if (!('showOpenFilePicker' in window)) {
         alert('Browser Anda tidak mendukung File System Access API. Gunakan Chrome, Edge, atau Opera versi terbaru di Desktop.');
@@ -492,6 +523,7 @@ watch(isRunning, (newVal, oldVal) => {
             @reset="rebuildBoards"
             @toggle-edit-constraints="isEditingConstraints = !isEditingConstraints"
             @clear-constraints="clearConstraints"
+            @randomize-constraints="randomizeConstraints"
         />
     </div>
 </template>
