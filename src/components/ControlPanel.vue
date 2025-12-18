@@ -16,7 +16,8 @@ const props = defineProps({
     timeLimit: Number, // New prop
     speed: Number,
     separation: Number,
-    stats: Array
+    stats: Array,
+    blockedCount: Number
 });
 
 const emit = defineEmits(['update:dims', 'update:startPos', 'update:isRandomStart', 'update:isRandomConstraints', 'update:saveCsv', 'select-file', 'update:speed', 'update:separation', 'update:timeLimit', 'toggle-run', 'reset', 'toggle-edit-constraints', 'clear-constraints', 'randomize-constraints']);
@@ -39,7 +40,7 @@ watch(() => props.startPos, (newVal) => {
 const updateDims = () => emit('update:dims', [...localDims]);
 const updateStartPos = () => emit('update:startPos', [...localStartPos]);
 
-const totalSteps = computed(() => localDims[0] * localDims[1] * localDims[2]);
+const totalSteps = computed(() => (localDims[0] * localDims[1] * localDims[2]) - (props.blockedCount || 0));
 
 const speedLevels = {
     1: { label: 'Very Slow', value: 10 },

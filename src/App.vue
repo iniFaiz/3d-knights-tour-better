@@ -521,6 +521,7 @@ watch(isRunning, (newVal, oldVal) => {
             :separation="separation"
             :timeLimit="timeLimit"
             :stats="stats"
+            :blockedCount="blockedCells.size"
             @update:dims="updateDims"
             @update:startPos="updateStartPos"
             @update:isRandomConstraints="isRandomConstraints = $event"
